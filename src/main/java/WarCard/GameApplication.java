@@ -7,7 +7,9 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 
-
+/**
+ * The GameApplication class is the entry point of the War Card Game application.
+ */
 public class GameApplication extends Application {
     @Override
     public void start(Stage stage) throws Exception {

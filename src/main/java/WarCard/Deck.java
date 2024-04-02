@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 /**
- * The {@code Deck} class represents a deck of playing cards.
+ * The Deck class represents a deck of playing cards.
  * It contains methods for initializing, shuffling, dealing cards, and displaying the deck.
  */
 public class Deck {
@@ -28,6 +28,13 @@ public class Deck {
                 deck.add(card);
             }
         }
+    }
+    /**
+     * Returns the deck of cards.
+     * @return An ArrayList containing the cards in the deck.
+     */
+    public ArrayList<Card> getDeck() {
+        return deck;
     }
 
     /**

@@ -1,7 +1,7 @@
 package WarCard;
 
 /**
- * The {@code Suit} enum represents the suits of playing cards.
+ * The Suit enum represents the suits of playing cards.
  * Each suit represents a category of cards in the card game.
  */
 public enum Suit {

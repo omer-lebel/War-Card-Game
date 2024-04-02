@@ -12,15 +12,15 @@ public class WarCard {
     private final ArrayList<Card> table;
     private final Player playerCom;
     private final Player playerUser;
-    private boolean insideWar;
-    private int warCardsCount; //count the 3 cards that we put after each war;
 
     //round info
-    private Card cardCom;
-    private Card cardUser;
-    private Player winner;
+    private Player winner;          // winner of the round (or the game if ended)
+    private Card cardCom;           // the card drawn by the computer in the current round
+    private Card cardUser;          // the card drawn by the user in the current round
+    private int warCardsCount;      // counts the 3 cards that draw after each war
+    private boolean insideWar;      // indicate if the *next* round will be inside war
 
-    private int testCount;
+    private int testCount;          // for control of the test func
 
 
     /**
@@ -45,20 +45,26 @@ public class WarCard {
         insideWar = false;
 
         deck.shuffle();
-        deck.dealCards(playerCom, playerUser);
-//        test(-1);
+//        deck.dealCards(playerCom, playerUser);
+        test(-1);
     }
 
     /**
-     * Executes a round of the game.
+     * Executes a round of the game. If the game is over, update the players score
      * @return true if another round should be executed, false otherwise
      */
     public boolean exeRound() {
+        boolean res;
         if (insideWar) {
-            return updateWarStatus();
+            res = updateWarStatus();
         } else {
-            return newBattle();
+            res = newBattle();
         }
+
+        if (!res){
+            updateScore();
+        }
+        return res;
     }
 
     /**
@@ -92,7 +98,7 @@ public class WarCard {
     }
 
     /**
-     * Updates the status of the ongoing war based on the current round status.
+     * Updates the number of cards drawn from the 3 cards that are drawn in each war
      * @return true if another round should be executed, false otherwise
      */
     private boolean updateWarStatus() {
@@ -107,7 +113,6 @@ public class WarCard {
     /**
      * Draws cards from both players for the round and move them to the table.
      * If one of the players run out of cards, update the winner.
-     *
      * @return true if both players have cards and the round can continue, false otherwise
      */
     private boolean drawCardsFromPlayers() {
@@ -147,17 +152,50 @@ public class WarCard {
         }
     }
 
+    /**
+     * Sets the face-down state for the specified cards.
+     * @param cards The cards to set face-down.
+     */
     private void faceDownCards(Card... cards) {
         for (Card card : cards) {
             if (card != null) {
-                card.reverseFace();
+                card.setFaceDown();
             }
         }
     }
 
     /**
-     * Returns the current card on the table as string
+     * Increases the score of the winner of the game, or for both in a tie.
+     */
+    private void updateScore(){
+        if (winner == playerCom || winner == null){
+            playerCom.incScore();
+        }
+        if (winner == playerUser || winner == null){
+            playerUser.incScore();
+        }
+    }
+
+    /**
+     * Checks if the last round was part of war (the first or one of the extra 3 faced down cards)
      *
+     * @return True if the last round wss inside a war, false otherwise.
+     */
+    public boolean insideWar(){
+        return warCardsCount > 0;
+    }
+
+    /**
+     * Checks if the game is over.
+     *
+     * @return true if one of the players have no cards, false otherwise
+     */
+    private boolean gameIsOver() {
+        return playerUser.hasNoCards() || playerCom.hasNoCards();
+    }
+
+    /**
+     * Returns string representation of the cards currently on the table.
      * @return string representation of the table
      */
     public String getTable() {
@@ -165,9 +203,13 @@ public class WarCard {
     }
 
     /**
-     * Returns the current status of the round.
+     * Retrieves the count of additional cards drawn in the current war.
      *
-     * @return the round status
+     * The count includes:
+     * - 0: The initial round that caused the war.
+     * - 1, 2, 3: The three additional cards drawn during the war.
+     *
+     * @return The count of additional cards drawn in the current war.
      */
     public int getWarCardsCount() {
         return warCardsCount;
@@ -212,29 +254,10 @@ public class WarCard {
     /**
      * Returns the winner of the current round.
      *
-     * @return the winning player, or null if it's a tie (can happen in a war or in the end of the game)
+     * @return the winning player, or null if it's a tie (happened only in war)
      */
     public Player getWinner() {
         return winner;
-    }
-
-    // return true if the last round was inside a war
-    // (despite the boolean insideWar that determinate whether the next round is inside war)
-    public boolean insideWar(){
-        return warCardsCount > 0;
-    }
-
-    /**
-     * Checks if the game is over.
-     *
-     * @return true if one of the players have no cards, false otherwise
-     */
-    private boolean gameIsOver() {
-        return playerUser.hasNoCards() || playerCom.hasNoCards();
-    }
-
-    private boolean isTie() {
-        return playerCom.hasNoCards() && playerUser.hasNoCards();
     }
 
 

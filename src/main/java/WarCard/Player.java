@@ -3,13 +3,13 @@ package WarCard;
 import java.util.ArrayList;
 
 /**
- * The {@code Player} class represents a player in the card game.
+ * The Player class represents a player in the card game. <br>
  * Each player has a name, a hand of cards, and a score.
  */
 public class Player {
 
-    private String name;
-    private ArrayList<Card> hand;
+    private final String name;
+    private final ArrayList<Card> hand;
     private int score;
 
     /**

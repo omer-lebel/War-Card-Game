@@ -6,16 +6,18 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-import java.io.File;
 
 /**
- * The {@code GameController} class manages the logic and UI interactions of the Card War game. <br>
- * It handles staring and ending of new games, updates players score and manages game state.
+ * The GameController class manages the game logic and user interface for the War Card game.
  */
 public class GameController {
-    private static boolean newGame = true;
-    private static boolean gameIsOn = false;
-    private static boolean gameEnded = false;
+    private boolean newGame = true;
+    private boolean gameIsOn = false;
+    private boolean gameEnded = false;
+
+    private final int FACE_DOWN = 1;
+    private final int DONT_SHOW_CARD = 2;
+    private final int OUT_OF_CARDS = 3;
 
     private WarCard warCard;
 
@@ -54,7 +56,7 @@ public class GameController {
      */
     public void initialize() {
         warCard = new WarCard();
-        displayCardsBack("back", "back");
+        displaySpecialCards(FACE_DOWN, FACE_DOWN);
     }
 
     /**
@@ -73,6 +75,10 @@ public class GameController {
         runGame();
     }
 
+    /**
+     * Runs the game logic.
+     * Checks if the game is still ongoing and proceeds to handle the game accordingly.
+     */
     private void runGame() {
         if (gameIsOn) {
             handleGameRound();
@@ -82,7 +88,11 @@ public class GameController {
         }
     }
 
-    private void handleGameRound(){
+    /**
+     * Handles the logic for each round of the game.
+     * Executes a round of the game and updates the game interface accordingly.
+     */
+    private void handleGameRound() {
         gameIsOn = warCard.exeRound();
 
         displayCards();
@@ -90,7 +100,7 @@ public class GameController {
         if (warCard.getWinner() != null && !warCard.insideWar()) {
             lblRoundRes.setText(warCard.getWinner() + " won the round");
         } else {
-            switch (warCard.getWarCardsCount()){
+            switch (warCard.getWarCardsCount()) {
                 case 0:
                     lblRoundRes.setText("war!");
                     break;
@@ -109,91 +119,124 @@ public class GameController {
         }
     }
 
-
-    private void handleGameEnd(){
+    /**
+     * Handles the end of the game by updating the game state and displaying the game summary.
+     */
+    private void handleGameEnd() {
         gameEnded = true;
         lblInstructions.setText("press next to see game's score summary");
 
-
+        // tie
         if (warCard.getWinner() == null) {
             lblRoundRes.setText("It's a tie");
-            displayCardsBack(null, null); //don't show any card
-            warCard.getPlayerCom().incScore();
-            warCard.getPlayerUser().incScore();
+            displaySpecialCards(DONT_SHOW_CARD, DONT_SHOW_CARD);
         }
-        else { //there is a winner
+        // there is a winner
+        else {
             lblRoundRes.setText(warCard.getWinner().getName().toUpperCase() + " WON THE GAME");
-            warCard.getWinner().incScore();
-
             if (warCard.getPlayerCom().hasNoCards()) { //user won
-                displayCardsBack(null, "back");
+                displaySpecialCards(DONT_SHOW_CARD, FACE_DOWN);
             } else { //player won
-                displayCardsBack("back", null);
+                displaySpecialCards(FACE_DOWN, FACE_DOWN);
             }
         }
     }
 
-
+    /**
+     * Displays the game summary including player scores and prompts for starting a new game.
+     */
     private void showSummery() {
-        lblRoundRes.setText("would you like to play again?");
-        lblInstructions.setText("press next to start a new game");
+        lblRoundRes.setText("\tyou: " + warCard.getPlayerUser().getScore() +
+                "\t\tcomputer: " + warCard.getPlayerCom().getScore());
+        lblInstructions.setText("would you like to play again? press next");
 
-        lblComName.setText("computer: " + warCard.getPlayerCom().getScore());
-        lblUserName.setText("you: " + warCard.getPlayerUser().getScore());
+        lblComName.setText("");
+        lblUserName.setText("");
 
-        displayCardsBack("back", "back");
+        displaySpecialCards(FACE_DOWN, FACE_DOWN);
 
         newGame = true;
     }
 
 
+    /**
+     * Returns the image of a card based on the provided card object.
+     *
+     * @param card The card object for which to retrieve the image.
+     * @return The image corresponding to the provided card object.
+     */
     private Image getCardImg(Card card) {
 
         if (card == null) {
             return null;
         }
-
         return getCardImg(card.toString().replace(' ', '_'));
     }
 
-
+    /**
+     * Returns the image of a card based on its name.
+     * Searches for the card image in the resources directory based on the card name.
+     *
+     * @param cardName The name of the card for which to retrieve the image.
+     * @return The image corresponding to the card name.
+     */
     private Image getCardImg(String cardName) {
-        String s = File.separator;
-        String path = "file:" + s + s + s + System.getProperty("user.dir") + s + "src" + s + "main" + s + "java" + s
-                + "WarCard" + s + "cardImg" + s + cardName + ".png";
 
-//        String path = "file:" + s + s + s + System.getProperty("user.dir") + s + cardName + ".png";
-
-        return new Image(path);
+        return new Image(getClass().getResource("cardImg/" + cardName + ".png").toString());
     }
 
+    /**
+     * Displays the cards drawn by players during the game round.
+     */
     private void displayCards() {
         displayCard(imgComCard, warCard.getCardCom());
         displayCard(imgUserCard, warCard.getCardUser());
     }
 
+    /**
+     * Displays a single card image in the specified ImageView.
+     *
+     * @param imageView The ImageView in which to display the card image.
+     * @param card      The card for which to display the image.
+     */
     private void displayCard(ImageView imageView, Card card) {
-        if (card == null){
-            imageView.setImage(getCardImg("out_of_cards"));
+        // player run out of card
+        if (card == null) {
+            displaySpecialCard(imageView, OUT_OF_CARDS);
         }
-        else if (!card.isReverse()) {
+        //one of the 3 war cards
+        else if (card.isFaceDown()) {
+            displaySpecialCard(imageView, FACE_DOWN);
+            card.setFaceUp(); // turns the card back over
+        }
+        // regular card
+        else {
             imageView.setImage(getCardImg(card));
-        } else {
-            imageView.setImage(getCardImg("back"));
-            card.reverseFace();
         }
     }
 
-    private void displayCardsBack(String backComCard, String backUserCard) {
-        displayCardBack(imgComCard, backComCard);
-        displayCardBack(imgUserCard, backUserCard);
+    /**
+     * Displays cards in special state: reversed card, or no card at all
+     * (in the end or start of the game)
+     *
+     * @param comCardState  The state of the computer's card (NO_CARD or FACE_DOWN).
+     * @param userCardState The state of the user's card (NO_CARD or FACE_DOWN).
+     */
+    private void displaySpecialCards(int comCardState, int userCardState) {
+        displaySpecialCard(imgComCard, comCardState);
+        displaySpecialCard(imgUserCard, userCardState);
     }
 
-    private void displayCardBack(ImageView imageView, String back) {
-        if (back == null){
+    private void displaySpecialCard(ImageView imageView, int cardState) {
+        if (cardState == DONT_SHOW_CARD){
             imageView.setImage(null);
-        }else{
+        }
+        if (cardState == FACE_DOWN){
             imageView.setImage(getCardImg("back"));
+        }
+        if (cardState == OUT_OF_CARDS){
+            imageView.setImage(getCardImg("out_of_cards"));
         }
     }
 }
+
